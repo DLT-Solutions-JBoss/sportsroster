@@ -4,29 +4,28 @@
 <!-- CSS goes in the document HEAD or added to your external stylesheet -->
 <style type="text/css">
 table.gridtable {
-	font-family: verdana,arial,sans-serif;
-	font-size:11px;
-	color:#333333;
-	border-width: 1px;
-	border-color: #666666;
-	border-collapse: collapse;
+        font-family: verdana,arial,sans-serif;
+        font-size:11px;
+        color:#333333;
+        border-width: 1px;
+        border-color: #666666;
+        border-collapse: collapse;
 }
 table.gridtable th {
-	border-width: 1px;
-	padding: 8px;
-	border-style: solid;
-	border-color: #666666;
-	background-color: #dedede;
+        border-width: 1px;
+        padding: 8px;
+        border-style: solid;
+        border-color: #666666;
+        background-color: #dedede;
 }
 table.gridtable td {
-	border-width: 1px;
-	padding: 8px;
-	border-style: solid;
-	border-color: #666666;
-	background-color: #ffffff;
+        border-width: 1px;
+        padding: 8px;
+        border-style: solid;
+        border-color: #666666;
+        background-color: #ffffff;
 }
 </style>
-
 <script>
 function loadTeams(sport)
 {
@@ -47,18 +46,13 @@ function loadTeams(sport)
    {
       if (restTeamHttp.readyState==4 && restTeamHttp.status==200)
       {
-          var separation = 'Conference';
+          var template = '<table class=\"gridtable\"><tr><th>Conference</th><th>Division</th><th>City</th><th>Team</th></tr>';
 
-          if (sport == 'MLB')
-          {
-              separation = 'League';
-          }
-
-          var template = '<table class=\"gridtable\"><tr><th>'+separation+'</th><th>Division</th><th>City</th><th>Team</th></tr>';
-
-          //document.getElementById("myDiv").innerHTML=restTeamHttp.responseText;
           var jsonData = JSON.parse(restTeamHttp.responseText);
           var jsonRows = '';
+          var ddlTeams = '';
+
+          var ddlSelect = "<select name=\"targetTeam\" form=\"tradeForm\">";
 
           for(var i = 0; i < jsonData.length; i++)
           {
@@ -66,24 +60,21 @@ function loadTeams(sport)
                        jsonData[i].conference+"</td><td>"+
                        jsonData[i].division+"</td><td>"+
                        jsonData[i].city+"</td><td>"+
-                       "<a href=\"javascript:loadRoster('"+sport+"','"+
-                            jsonData[i].city+" "+
-                            jsonData[i].name+"','"+
-                            jsonData[i].id+"');\">"+
-                            jsonData[i].name+
-                               "</a></td></tr>";
+                       "<a href=\"javascript:loadRoster('"+sport+"','"+jsonData[i].city+" "+jsonData[i].name+"','"+jsonData[i].id+"');\">"+jsonData[i].name+"</a></td></tr>";
+
+             ddlTeams += '<option value="'+jsonData[i].id+'">'+jsonData[i].city+" "+jsonData[i].name+'</option>';
           }
-             
+
           document.getElementById("myDiv").innerHTML=template + jsonRows + "</table>";
+          document.getElementById("recentTeams").innerHTML=ddlSelect + ddlTeams + "</select>";
       }
    }
-   
+
    document.getElementById("myTeam").innerHTML="";
-   restTeamHttp.open("GET","http://rcjbosstester-test.redcaiman.dlt.com/rest/"+sport+"/teams",true);
+   restTeamHttp.open("GET","http://rcjbosstester-dltjbossmw.rhcloud.com/rest/"+sport+"/teams",true);
    restTeamHttp.setRequestHeader("X-PINGOTHER","pingpong");
    restTeamHttp.setRequestHeader("Content-Type","text/xml");
    restTeamHttp.send();
-
 }
 
 function loadRoster(sport, teamName, teamId)
@@ -106,28 +97,80 @@ function loadRoster(sport, teamName, teamId)
    {
       if (restRosterHttp.readyState==4 && restRosterHttp.status==200)
       {
-          var template = '<h1>'+teamName+'</h1><br><table class=\"gridtable\"><tr><th>Position</th><th>Last Name</th><th>First Name</th></tr>';
+          var template = '<h1>'+teamName+
+                         "&nbsp\;&nbsp\;<a href='javascript:addPlayer('"+sport+"',"+teamId+")><img src='/images/add_player.jpg' alt='Add Player' height='30' width='30'></a></h1>"+
+                         '<table class=\"gridtable\"><tr><th>Position</th><th>Last Name</th><th>First Name</th><th>&nbsp\;</th><th>&nbsp\;</th></tr>';
 
-          //document.getElementById("myTeam").innerHTML=restRosterHttp.responseText;
           var jsonRosterData = JSON.parse(restRosterHttp.responseText);
           var jsonRosterRows = '';
 
           for(var i = 0; i < jsonRosterData.length; i++)
           {
-             jsonRosterRows += "<tr><td>"+
-                       jsonRosterData[i].position+"</td><td>"+
-                       jsonRosterData[i].lastName+"</td><td>"+
-                       jsonRosterData[i].firstName+"</td></tr>";
+             jsonRosterRows += "<tr>"+
+                       "<td>"+jsonRosterData[i].position+"</td>"+
+                       "<td>"+jsonRosterData[i].lastName+"</td>"+
+                       "<td>"+jsonRosterData[i].firstName+"</td>"+
+                       "<td><a href=\"javascript:tradePlayer('"+sport+"',"+teamId+","+jsonRosterData[i].id+",'"+teamName+"','"+jsonRosterData[i].firstName+" "+jsonRosterData[i].lastName+"')\"><img src='/images/trade_button.png' alt='Trade' height='30' width='44'></a></td>"+
+                       "<td><a href=\"javascript:releasePlayer('"+sport+"',"+teamId+","+jsonRosterData[i].id+",'"+teamName+"','"+jsonRosterData[i].firstName+" "+jsonRosterData[i].lastName+"')\"><img src='/images/release.jpg' alt='Trade' height='30' width='30'></a></td>"+
+                       "</tr>";
           }
 
           document.getElementById("myTeam").innerHTML=template + jsonRosterRows + "</table>";
       }
    }
 
-   restRosterHttp.open("GET","http://rcjbosstester-test.redcaiman.dlt.com/rest/"+sport+"/team/"+teamId,true);
-//   restTeamHttp.setRequestHeader("X-PINGOTHER","pingpong");
-//   restTeamHttp.setRequestHeader("Content-Type","text/xml");
+   restRosterHttp.open("GET","http://rcjbosstester-dltjbossmw.rhcloud.com/rest/"+sport+"/team/"+teamId,true);
    restRosterHttp.send();
+}
+
+function releasePlayer(sport, teamId, playerId, teamName, playerName)
+{
+  var r=confirm("You are about to release "+playerName+" from the "+teamName+".");
+
+  if (r==true)
+  {
+        var restReleaseHttp;
+	    if (window.XMLHttpRequest)
+	    {
+	        // code for IE7+, Firefox, Chrome, Opera, Safari
+	        restReleaseHttp=new XMLHttpRequest();
+	        restReleaseHttp.overrideMimeType("application/json");
+	    }
+	    else
+	    {
+	        // code for IE6, IE5
+	        restReleaseHttp=new ActiveXObject("Microsoft.XMLHTTP");
+        }
+
+        restReleaseHttp.onreadystatechange=function()
+		{
+		   if (restReleaseHttp.readyState==4 && restReleaseHttp.status==200)
+		   {
+		       loadRoster(sport, teamName, teamId);
+		   }
+        }
+
+        restReleaseHttp.open("DELETE","http://rcjbosstester-dltjbossmw.rhcloud.com/rest/"+sport+"/release/"+playerId,true);
+		restReleaseHttp.send();
+
+  }
+}
+
+function tradePlayer(sport, teamId, playerId, teamName, playerName)
+{
+
+  var myWindow = window.open("","Trade", "height=300,width=300,menubar=no,status=no") ;
+
+  var confirm = "<p>You are about to trade "+playerName+" from the "+teamName+" to the <p>";
+
+  var newWindowText = confirm;
+  newWindowText += "<form id=\"tradeForm\" action=\"parent.commenseTrade()\" method=\"post\">"+
+                 document.getElementById("recentTeams").innerHTML +
+                 "<input type=\"submit\" value=\"Trade\">" +
+                 "</form>";
+
+  myWindow.document.write(newWindowText);
+
 }
 </script>
 </head>
@@ -160,5 +203,9 @@ function loadRoster(sport, teamName, teamId)
 </tr>
 </table>
 
+<footer>
+  <p>This page is being generated from sportsroster-dltjbossmw.rhcloud.com</p>
+  <p>Contact information: <a href="mailto:rick.stewart@dlt.com">Rick Stewart</a>.</p>
+</footer>
 </body>
 </html>
